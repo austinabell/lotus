@@ -369,6 +369,7 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 		gasReward := big.Zero()
 
 		for _, cm := range append(b.BlsMessages, b.SecpkMessages...) {
+			// mcid := cm.Cid()
 			m := cm.VMMessage()
 			if _, found := processedMsgs[m.Cid()]; found {
 				continue
@@ -381,6 +382,8 @@ func (sm *StateManager) ApplyBlocks(ctx context.Context, parentEpoch abi.ChainEp
 			receipts = append(receipts, &r.MessageReceipt)
 			gasReward = big.Add(gasReward, r.GasCosts.MinerTip)
 			penalty = big.Add(penalty, r.GasCosts.MinerPenalty)
+
+			// fmt.Println(mcid, int64(r.MessageReceipt.ExitCode), r.MessageReceipt.GasUsed)
 
 			if cb != nil {
 				if err := cb(cm.Cid(), m, r); err != nil {
@@ -915,33 +918,41 @@ func (sm *StateManager) MarketBalance(ctx context.Context, addr address.Address,
 	return out, nil
 }
 
-func (sm *StateManager) ValidateChain(ctx context.Context, ts *types.TipSet) error {
+func (sm *StateManager) ValidateChain(ctx context.Context, ts *types.TipSet) (*types.TipSet, error) {
 	tschain := []*types.TipSet{ts}
-	for ts.Height() != 0 {
+	// * Start epoch to validate chain by
+	for ts.Height() != 451944 {
 		next, err := sm.cs.LoadTipSet(ts.Parents())
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		tschain = append(tschain, next)
 		ts = next
 	}
 
+	// * Amount of epochs to verify (+1)
+	leng := 0
+
 	lastState := tschain[len(tschain)-1].ParentState()
-	for i := len(tschain) - 1; i >= 0; i-- {
+	for i := len(tschain) - 1; i >= 0 && i >= len(tschain)-leng-1; i-- {
 		cur := tschain[i]
 		log.Infof("computing state (height: %d, ts=%s)", cur.Height(), cur.Cids())
 		if cur.ParentState() != lastState {
-			return xerrors.Errorf("tipset chain had state mismatch at height %d", cur.Height())
+			return nil, xerrors.Errorf("tipset chain had state mismatch at height %d", cur.Height())
 		}
 		st, _, err := sm.TipSetState(ctx, cur)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		lastState = st
 	}
 
-	return nil
+	idx := len(tschain) - leng - 1
+	if idx < 0 {
+		idx = 0
+	}
+	return tschain[idx], nil
 }
 
 func (sm *StateManager) SetVMConstructor(nvm func(context.Context, *vm.VMOpts) (*vm.VM, error)) {

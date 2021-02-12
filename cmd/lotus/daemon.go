@@ -473,7 +473,9 @@ func ImportChain(ctx context.Context, r repo.Repo, fname string, snapshot bool) 
 		return xerrors.Errorf("flushing validation cache failed: %w", err)
 	}
 
-	gb, err := cst.GetTipsetByHeight(ctx, 0, ts, true)
+	// ! Comment this out if you've run this
+	// ! before, no need to load the full chain, it's slow
+	gb, err := cst.GetTipsetByHeight(context.TODO(), 0, ts, true)
 	if err != nil {
 		return err
 	}
@@ -482,12 +484,13 @@ func ImportChain(ctx context.Context, r repo.Repo, fname string, snapshot bool) 
 	if err != nil {
 		return err
 	}
+	// !
 
 	stm := stmgr.NewStateManager(cst)
 
 	if !snapshot {
 		log.Infof("validating imported chain...")
-		if err := stm.ValidateChain(ctx, ts); err != nil {
+		if ts, err = stm.ValidateChain(ctx, ts); err != nil {
 			return xerrors.Errorf("chain validation failed: %w", err)
 		}
 	}

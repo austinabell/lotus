@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -1488,6 +1489,10 @@ func (cs *ChainStore) WalkSnapshot(ctx context.Context, ts *types.TipSet, inclRe
 			return xerrors.Errorf("unmarshaling block header (cid=%s): %w", blk, err)
 		}
 
+		if b.Height > ts.Height()-inclRecentRoots {
+			fmt.Println("height", b.Height)
+		}
+
 		if currentMinHeight > b.Height {
 			currentMinHeight = b.Height
 			if currentMinHeight%builtin.EpochsInDay == 0 {
@@ -1561,10 +1566,13 @@ func (cs *ChainStore) WalkSnapshot(ctx context.Context, ts *types.TipSet, inclRe
 }
 
 func (cs *ChainStore) Import(r io.Reader) (*types.TipSet, error) {
-	header, err := car.LoadCar(cs.Blockstore(), r)
+	// header, err := car.LoadCar(cs.Blockstore(), r)
+	// * switch to reader when you don't want to import the car, just use header
+	rd, err := car.NewCarReader(r)
 	if err != nil {
 		return nil, xerrors.Errorf("loadcar failed: %w", err)
 	}
+	header := rd.Header
 
 	root, err := cs.LoadTipSet(types.NewTipSetKey(header.Roots...))
 	if err != nil {

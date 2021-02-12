@@ -207,18 +207,20 @@ func (pmgr *PeerMgr) doExpand(ctx context.Context) {
 			return
 		}
 
-		log.Info("connecting to bootstrap peers")
-		wg := sync.WaitGroup{}
-		for _, bsp := range pmgr.bootstrappers {
-			wg.Add(1)
-			go func(bsp peer.AddrInfo) {
-				defer wg.Done()
-				if err := pmgr.h.Connect(ctx, bsp); err != nil {
-					log.Warnf("failed to connect to bootstrap peer: %s", err)
-				}
-			}(bsp)
-		}
-		wg.Wait()
+		// * Ignore bootstrapping and networking, don't care for state diff
+		// Remove here
+		// log.Info("connecting to bootstrap peers")
+		// wg := sync.WaitGroup{}
+		// for _, bsp := range pmgr.bootstrappers {
+		// 	wg.Add(1)
+		// 	go func(bsp peer.AddrInfo) {
+		// 		defer wg.Done()
+		// 		if err := pmgr.h.Connect(ctx, bsp); err != nil {
+		// 			log.Warnf("failed to connect to bootstrap peer: %s", err)
+		// 		}
+		// 	}(bsp)
+		// }
+		// wg.Wait()
 		return
 	}
 

@@ -1054,9 +1054,10 @@ var chainExportCmd = &cli.Command{
 		}
 
 		rsrs := abi.ChainEpoch(cctx.Int64("recent-stateroots"))
-		if cctx.IsSet("recent-stateroots") && rsrs < build.Finality {
-			return fmt.Errorf("\"recent-stateroots\" has to be greater than %d", build.Finality)
-		}
+		// * this removes 900 recent root requirement
+		// if cctx.IsSet("recent-stateroots") && rsrs < build.Finality {
+		// 	return fmt.Errorf("\"recent-stateroots\" has to be greater than %d", build.Finality)
+		// }
 
 		fi, err := os.Create(cctx.Args().First())
 		if err != nil {

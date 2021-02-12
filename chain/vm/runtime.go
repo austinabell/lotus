@@ -532,6 +532,10 @@ func (rt *Runtime) chargeGasFunc(skip int) func(GasCharge) {
 
 func (rt *Runtime) chargeGasInternal(gas GasCharge, skip int) aerrors.ActorError {
 	toUse := gas.Total()
+	// * use this when you want to print and compare gas usage
+	if toUse > 0 {
+		fmt.Println(gas.Name, toUse, toUse+rt.gasUsed)
+	}
 	if EnableGasTracing {
 		var callers [10]uintptr
 
